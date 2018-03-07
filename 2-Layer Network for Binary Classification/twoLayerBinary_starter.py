@@ -232,13 +232,15 @@ def classify(X, parameters):
         YPred - numpy.ndarray (1,m) of predictions
     '''
     ### CODE HERE
-    A1, cache1 = layer_forward(X, parameters["W1"], parameters["b1"], "tanh")
-    A2, cache2 = layer_forward(A1, parameters["W2"], parameters["b2"], "sigmoid")
+    W1,b1 = parameters[0]
+    W2,b2 = parameters[1]
+    A1, cache1 = layer_forward(X, W1, b1, "tanh")
+    A2, cache2 = layer_forward(A1, W2, b2, "sigmoid")
 
     YPred = np.zeros((1, X.shape[1]))
 
     for i in range(A2.shape[1]):
-        if A2[0, i] >= 0.5:
+        if A2[0, int(i)] >= 0.5:
             YPred[0, i] = 1
         else:
             YPred[0, i] = 0
