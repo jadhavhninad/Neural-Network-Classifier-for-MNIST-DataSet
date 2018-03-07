@@ -1,9 +1,5 @@
 '''
 This file implements a two layer neural network for a binary classifier
-
-Hemanth Venkateswara
-hkdv1@asu.edu
-Feb 2018
 '''
 import numpy as np
 from load_dataset import mnist
@@ -80,7 +76,8 @@ def sigmoid_der(dA, cache):
     ### CODE HERE
     return dZ
 
-def initialize_2layer_weights(n_in, n_h, n_fin):
+#def initialize_2layer_weights(n_in, n_h, n_fin):
+def initialize_2layer_weights(net_dims):
     '''
     Initializes the weights of the 2 layer network
 
@@ -94,18 +91,16 @@ def initialize_2layer_weights(n_in, n_h, n_fin):
     '''
     # initialize network parameters
     ### CODE HERE
-    W1 = np.random.rand(n_h,n_in)* 0.01
-    b1 = np.random.rand(n_h,1)* 0.01
-    W2 = np.random.rand(n_fin,n_h)* 0.01
-    b2 = np.random.rand(n_fin,1)* 0.01
-	
-	
-    parameters = {}
-    parameters["W1"] = W1
-    parameters["b1"] = b1
-    parameters["W2"] = W2
-    parameters["b2"] = b2
 
+    parameters=[]
+    for i in range(0,len(net_dims)-1,1):
+        param=[]
+        W = np.random.rand(net_dims[i+1],net_dims[i])* 0.01
+        b = np.random.rand(net_dims[i+1],1) * 0.1
+        param.append(W)
+        param.append(b)
+        parameters.append(param)
+        
     return parameters
 
 def linear_forward(A, W, b):
@@ -265,13 +260,12 @@ def two_layer_network(X, Y, net_dims, num_iterations=2000, learning_rate=0.1):
         costs - list of costs over training
         parameters - dictionary of trained network parameters
     '''
-    n_in, n_h, n_fin = net_dims
-    parameters = initialize_2layer_weights(n_in, n_h, n_fin)
-    W1 = parameters["W1"]
-    b1 = parameters["b1"]
-    W2 = parameters["W2"]
-    b2 = parameters["b2"]
+    #n_in, n_h, n_fin = net_dims
+    parameters = initialize_2layer_weights(net_dims)
 
+    W1,b1 = parameters[0]
+    W2,b2 = parameters[1]
+    
     A0 = X
     costs = []
     for ii in range(num_iterations):
