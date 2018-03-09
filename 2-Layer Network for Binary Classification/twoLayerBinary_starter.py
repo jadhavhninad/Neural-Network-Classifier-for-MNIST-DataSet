@@ -255,40 +255,57 @@ def two_layer_network(X, Y, net_dims, num_iterations=2000, learning_rate=0.1):
         costs - list of costs over training
         parameters - dictionary of trained network parameters
     '''
-
     parameters = initialize_2layer_weights(net_dims)
 
-    W1,b1 = parameters[0]
-    W2,b2 = parameters[1]
-    
-    A0 = X
+    W=[]
+    b=[]
+    dW=[]
+    db=[]
     costs = []
-    
+
+    #dummy initialization of dW and db
+    for k in range(len(parameters)):
+        tw,tb = parameters[k]
+        W.append(tw)
+        b.append(tb)
+        dW.append(tw)
+        db.append(tb)
+
     for ii in range(num_iterations):
         # Forward propagation
         ### CODE HERE
-        A1, cache1 = layer_forward(A0, W1, b1, "tanh") #For all the middle hidden layers
+        A_prev = X
+        A_vals=[]
+        cache_vals=[]
+        for itr in range(len(parameters)-1):
+            tempA,temp_cache = layer_forward(A_prev, W[itr], b[itr], "tanh")#For all the middle hidden layers
+            A_vals.append(tempA)
+            cache_vals.append(temp_cache)
+            A_prev = tempA
+            #print("done with itr ",itr)
 
-        A2, cache2 = layer_forward(A1, W2, b2, "sigmoid")#For last layers since binary clssification
+        A_final, cache_final = layer_forward(A_prev, W[len(W)-1], b[len(b)-1], "sigmoid")#For last layers since binary clssification
+        cache_vals.append(cache_final)
 
-        
-        # A2 = Prediction (binary classifier)
+        # A_final = Prediction (binary classifier)
         # cost estimation
         ### CODE HERE
-        cost = cost_estimate(A2, Y)
+        cost = cost_estimate(A_final, Y)
         m_s = Y.shape[1]
 
         #The matrix operations are done element-wise
-        dA2 = (-1/m_s) * (Y/A2 - (Y - 1) / (A2 - 1))		
-        dA1, dW2, db2 = layer_backward(dA2, cache2, W2, b2, "sigmoid")
-        dA0, dW1, db1 = layer_backward(dA1, cache1, W1, b1, "tanh")
+        dA = (-1/m_s) * (Y/A_final - (Y - 1) / (A_final - 1))		
+
+        
+        for itr in range(len(parameters)-1, -1, -1):
+            dA_prev, dW[itr], db[itr] = layer_backward(dA, cache_vals[itr], W[itr], b[itr], "sigmoid")
+            dA = dA_prev
 
         # update parameters
         ### CODE HERE
-        W1 += -learning_rate * dW1
-        W2 += -learning_rate * dW2
-        b1 += -learning_rate * b1
-        b2 += -learning_rate * b2
+        for itr in range(len(parameters)):
+            W[itr] += -learning_rate * dW[itr]
+            b[itr] += -learning_rate * db[itr]
 
         if ii % 10 == 0:
             costs.append(cost)
