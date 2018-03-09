@@ -20,11 +20,9 @@ def tanh(Z):
         cache is a dictionary with {"Z", Z}
     '''
     A = np.tanh(Z)
-    cache = {}
-    cache["Z"] = Z
-    return A, cache
+    return A
 
-def tanh_der(dA, cache):
+def tanh_der(dA, Z):
     '''
 	computes derivative of tanh activation
 
@@ -37,8 +35,7 @@ def tanh_der(dA, cache):
 		dZ is the derivative. numpy.ndarray (n,m)
 	'''
     ### CODE HERE
-    Z = cache["Z"]
-    A,cache = tanh(Z)
+    A = tanh(Z)
     dZ = dA * (1 - A**2)
     return dZ
 
@@ -54,11 +51,9 @@ def sigmoid(Z):
         cache is a dictionary with {"Z", Z}
     '''
     A = 1/(1+np.exp(-Z))
-    cache = {}
-    cache["Z"] = Z
-    return A, cache
+    return A
 
-def sigmoid_der(dA, cache):
+def sigmoid_der(dA, Z):
     '''
     computes derivative of sigmoid activation
 
@@ -69,9 +64,11 @@ def sigmoid_der(dA, cache):
 
     Returns: 
         dZ is the derivative. numpy.ndarray (n,m)
-    '''
+    
     Z = cache["Z"]
-    A,cache = sigmoid(Z)
+    '''
+    
+    A = sigmoid(Z)
     dZ = dA * A*(1 - A)
     ### CODE HERE
     return dZ
@@ -122,9 +119,11 @@ def linear_forward(A, W, b):
     Z = np.dot(W,A) + b
     cache = {}
     cache["A"] = A
-    #cache["W"] = W
-    #cache["b"] = b
-    return Z, cache
+    cache["W"] = W
+    cache["b"] = b
+    cache["Z"] = Z
+    
+    return cache
 
 def layer_forward(A_prev, W, b, activation):
     '''
@@ -142,36 +141,32 @@ def layer_forward(A_prev, W, b, activation):
         cache - a dictionary containing the cache from the linear and the nonlinear propagation
         to be used for derivative
     '''
-    Z, lin_cache = linear_forward(A_prev, W, b)
+    cache = linear_forward(A_prev, W, b)
     if activation == "sigmoid":
-        A, act_cache = sigmoid(Z)
+        A = sigmoid(cache["Z"])
     elif activation == "tanh":
-        A, act_cache = tanh(Z)
-    
-    cache = {}
-    cache["lin_cache"] = lin_cache
-    cache["act_cache"] = act_cache
+        A = tanh(cache["Z"])
 
     return A, cache
 
-def cost_estimate(A2, Y):
+def cost_estimate(A_last, Y):
     '''
     Estimates the cost with prediction A2
 
     Inputs:
-        A2 - numpy.ndarray (1,m) of activations from the last layer
+        A_last - numpy.ndarray (1,m) of activations from the last layer
         Y - numpy.ndarray (1,m) of labels
     
     Returns:
         cost of the objective function
     '''
     m=Y.shape[1]
-    cost = (-1/m) * np.sum(Y * np.log(A2) + (1-Y)*np.log(1-A2))
+    cost = (-1/m) * np.sum(Y * np.log(A_last) + (1-Y)*np.log(1-A_last))
 	
     ### CODE HERE
     return cost
 
-def linear_backward(dZ, cache, W, b):
+def linear_backward(dZ, A, W, b):
     '''
     Backward propagation through the linear layer
 
@@ -189,7 +184,7 @@ def linear_backward(dZ, cache, W, b):
         db - numpy.ndarray (n, 1) the gradient of b
     '''
     # CODE HERE
-    dW = np.dot(dZ,cache["A"].T)
+    dW = np.dot(dZ,A.T)
     db = np.sum(dZ, axis=1, keepdims=True)
     dA_prev = np.dot(W.T,dZ)
 	
@@ -201,7 +196,7 @@ def layer_backward(dA, cache, W, b, activation):
 
     Inputs:
         dA - numpy.ndarray (n,m) the derivative to the previous layer
-        cache - dictionary containing the linear_cache and the activation_cache
+        cache - dictionary containing the A_prev, W, b, Z values
         W - numpy.ndarray (n,p)  
         b - numpy.ndarray (n, 1)
     
@@ -210,15 +205,13 @@ def layer_backward(dA, cache, W, b, activation):
         dW - numpy.ndarray (n,p) the gradient of W 
         db - numpy.ndarray (n, 1) the gradient of b
     '''
-    lin_cache = cache["lin_cache"]
-    act_cache = cache["act_cache"]
-
+    
     if activation == "sigmoid":
-        dZ = sigmoid_der(dA, act_cache)
+        dZ = sigmoid_der(dA, cache["Z"])
     elif activation == "tanh":
-        dZ = tanh_der(dA, act_cache)
+        dZ = tanh_der(dA, cache["Z"])
    
-    dA_prev, dW, db = linear_backward(dZ, lin_cache, W, b)
+    dA_prev, dW, db = linear_backward(dZ, cache["A"], W, b)
     return dA_prev, dW, db
 
 def classify(X, parameters):
@@ -240,7 +233,7 @@ def classify(X, parameters):
     YPred = np.zeros((1, X.shape[1]))
 
     for i in range(A2.shape[1]):
-        if A2[0, int(i)] >= 0.5:
+        if A2[0, i] >= 0.5:
             YPred[0, i] = 1
         else:
             YPred[0, i] = 0
@@ -262,7 +255,7 @@ def two_layer_network(X, Y, net_dims, num_iterations=2000, learning_rate=0.1):
         costs - list of costs over training
         parameters - dictionary of trained network parameters
     '''
-    #n_in, n_h, n_fin = net_dims
+
     parameters = initialize_2layer_weights(net_dims)
 
     W1,b1 = parameters[0]
@@ -270,18 +263,23 @@ def two_layer_network(X, Y, net_dims, num_iterations=2000, learning_rate=0.1):
     
     A0 = X
     costs = []
+    
     for ii in range(num_iterations):
         # Forward propagation
         ### CODE HERE
-        A1, cache1 = layer_forward(A0, W1, b1, "tanh")
-        A2, cache2 = layer_forward(A1, W2, b2, "sigmoid")
+        A1, cache1 = layer_forward(A0, W1, b1, "tanh") #For all the middle hidden layers
 
+        A2, cache2 = layer_forward(A1, W2, b2, "sigmoid")#For last layers since binary clssification
+
+        
         # A2 = Prediction (binary classifier)
         # cost estimation
         ### CODE HERE
         cost = cost_estimate(A2, Y)
         m_s = Y.shape[1]
-        dA2 = (-1/m_s) * (Y/A2 - (Y - 1) / (A2 - 1))
+
+        #The matrix operations are done element-wise
+        dA2 = (-1/m_s) * (Y/A2 - (Y - 1) / (A2 - 1))		
         dA1, dW2, db2 = layer_backward(dA2, cache2, W2, b2, "sigmoid")
         dA0, dW1, db1 = layer_backward(dA1, cache1, W1, b1, "tanh")
 
@@ -303,13 +301,18 @@ def two_layer_network(X, Y, net_dims, num_iterations=2000, learning_rate=0.1):
 def main():
     # getting the subset dataset from MNIST
     # binary classification for digits 2 and 3
+    # for train, from the first 1000 samples, we get those samples which have label 2,4
+    # for train, from the first 6000 samples, we get those samples which have label 2,4
     train_data, train_label, test_data, test_label = \
                 mnist(ntrain=6000,ntest=1000,digit_range=[2,4])
 
+    #the labels are converted to 0 and 1 values (instead of the actual numbers)
+    
     n_in, m = train_data.shape
     n_fin = 1
     n_h = 500
     net_dims = [n_in, n_h, n_fin]
+    
     # initialize learning rate and num_iterations
     learning_rate = 0.1
     num_iterations = 1000

@@ -2,7 +2,7 @@ import numpy as np
 import os
 import pdb
 
-datasets_dir = './data/'
+datasets_dir = '../data/'
 
 def one_hot(x,n):
 	if type(x) == list:
