@@ -3,6 +3,7 @@ To implement a two layer neural network for a binary classifier and a multi laye
 
 ### [](#header-3) Implementation:
 *   The two layer network has 1 hidden layer dimension=500, for binary classification. The multilayer neural network program is able to create and train a multilayer network based on command line arguments. 
+*   The binary NN classifier has been modularized so that it can now be extended to multiclass classification by replacing the final sigmoid function with softmax
 *   Two approaches for K-Nearest Neighbour have been tried - using the default python package and building the algorithm from scratch. 
 *   Since the MNIST dataset has 60,000 images which is too large for batch gradient descent. Therefore, training is done with 6000 samples and test with 1000 samples.
 
